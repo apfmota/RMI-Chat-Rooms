@@ -1,3 +1,4 @@
+import java.rmi.RemoteException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -11,20 +12,22 @@ public class RoomChat implements IRoomChat {
     }
 
     @Override
-    public void sendMsg(String usrName, String msg) {
+    public void sendMsg(String usrName, String msg) throws RemoteException {
         for (IUserChat user: users.values()) {
             user.deliverMsg(usrName, msg);
         }
     }
 
     @Override
-    public void joinRoom(String userName, IUserChat user) {
+    public void joinRoom(String userName, IUserChat user) throws RemoteException {
         users.put(userName, user);
+        sendMsg("Servidor", userName + " joined");
     }
 
     @Override
-    public void leaveRoom(String usrName) {
+    public void leaveRoom(String usrName) throws RemoteException {
         users.remove(usrName);
+        sendMsg("Servidor", usrName + " left");
     }
 
     @Override

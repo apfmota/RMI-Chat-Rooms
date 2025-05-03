@@ -1,3 +1,5 @@
+import java.rmi.Naming;
+import java.rmi.server.UnicastRemoteObject;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
@@ -13,8 +15,13 @@ public class ServerChat  implements IServerChat {
 
     @Override
     public void createRoom(String roomName) {
-        RoomChat newRoom = new RoomChat();
-        newRoom.setRoomName(roomName);
-        roomList.put(roomName, newRoom);
+        try {
+            RoomChat newRoom = new RoomChat();
+            newRoom.setRoomName(roomName);
+            roomList.put(roomName, newRoom);
+            Naming.rebind("rmi://localhost:2020/" + roomName, UnicastRemoteObject.exportObject(newRoom, 0));
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 }
