@@ -75,11 +75,27 @@ public class ClientController {
 
     private void showRooms() throws RemoteException {
         this.mainFrame.getContentPane().removeAll();
+        JPanel mainPanel = new JPanel();
+
         this.roomsPanel = new JPanel();
         this.roomsPanel.setLayout(new BorderLayout());
+        this.roomsPanel.setSize(new Dimension(400, 400));
+
+        JPanel selectRoomsPanel = new JPanel();
+        selectRoomsPanel.setLayout(new BoxLayout(selectRoomsPanel, BoxLayout.Y_AXIS));
+        roomsPanel.add(selectRoomsPanel);
+
         for (String roomName: serverChat.getRooms()) {
+            JPanel roomPanel = new JPanel();
+            roomPanel.setLayout(new BorderLayout());
+            roomsPanel.add(roomPanel);
             JLabel roomNameLabel = new JLabel(roomName);
-            roomsPanel.add(roomNameLabel, BorderLayout.CENTER);
+            roomPanel.add(roomNameLabel, BorderLayout.WEST);
+            JButton joinButton = new JButton("Join");
+            roomPanel.add(joinButton, BorderLayout.EAST);
+            joinButton.addActionListener(e -> {
+                joinRoom(roomName);
+            });
         }
         this.mainFrame.add(roomsPanel);
 
@@ -101,7 +117,8 @@ public class ClientController {
         });
         this.roomsPanel.add(newRoomPanel, BorderLayout.SOUTH);
         newRoomPanel.add(newRoomButton, BorderLayout.EAST);
-        this.mainFrame.add(roomsPanel, BorderLayout.CENTER);
+        mainPanel.add(roomsPanel, BorderLayout.CENTER);
+        mainFrame.add(mainPanel, BorderLayout.CENTER);
         this.mainFrame.revalidate();
         this.mainFrame.repaint();
     }
@@ -140,13 +157,22 @@ public class ClientController {
         try {
             if (!serverChat.getRooms().contains(roomName)) {
                 serverChat.createRoom(roomName);
-                this.roomChat = (IRoomChat) Naming.lookup("rmi://" + this.serverAddress + ":2020/" + roomName);
-                showRoom();
-                this.roomChat.joinRoom(userChat.getUserName(), (IUserChat) UnicastRemoteObject.exportObject(userChat, 0));
+                joinRoom(roomName);
             }
         } catch (Exception e) {
             e.printStackTrace();
             //tratar erro depois
+        }
+    }
+
+    private void joinRoom(String roomName) {
+        try {
+            this.roomChat = (IRoomChat) Naming.lookup("rmi://" + this.serverAddress + ":2020/" + roomName);
+            showRoom();
+            this.roomChat.joinRoom(userChat.getUserName(), (IUserChat) UnicastRemoteObject.exportObject(userChat, 0));
+        } catch (Exception e) {
+            e.printStackTrace();
+            //tratar melhor depois
         }
     }
 
@@ -167,5 +193,12 @@ public class ClientController {
             e.printStackTrace();
             //tratar melhor depois
         }
+    }
+
+    public void receiveMessage(String senderName, String message) {
+        String formattedMsg = senderName + ": " + message;
+        getRoomMessages().add(new JLabel(formattedMsg));
+        getRoomMessages() .revalidate();
+        getRoomMessages().repaint();
     }
 }

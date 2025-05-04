@@ -1,4 +1,5 @@
 import java.rmi.Naming;
+import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -7,6 +8,10 @@ import java.util.Map;
 public class ServerChat  implements IServerChat {
 
     private Map<String, IRoomChat> roomList = new HashMap<>();
+
+    public Map<String, IRoomChat> getRoomList() throws RemoteException {
+        return roomList;
+    }
 
     @Override
     public ArrayList<String> getRooms() {

@@ -1,8 +1,4 @@
-import javax.swing.*;
-import javax.swing.text.DateFormatter;
 import java.rmi.RemoteException;
-import java.text.DateFormat;
-import java.util.Date;
 
 public class UserChat implements IUserChat {
 
@@ -20,9 +16,6 @@ public class UserChat implements IUserChat {
 
     @Override
     public void deliverMsg(String senderName, String msg) {
-        String formattedMsg = senderName + ": " + msg;
-        clientController.getRoomMessages().add(new JLabel(formattedMsg));
-        clientController.getRoomMessages() .revalidate();
-        clientController.getRoomMessages().repaint();
+        clientController.receiveMessage(senderName, msg);
     }
 }
