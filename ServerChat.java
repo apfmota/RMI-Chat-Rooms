@@ -8,6 +8,11 @@ import java.util.Map;
 public class ServerChat  implements IServerChat {
 
     private Map<String, IRoomChat> roomList = new HashMap<>();
+    private final ServerController controller;
+
+    public ServerChat(ServerController controller) {
+        this.controller = controller;
+    }
 
     public Map<String, IRoomChat> getRoomList() throws RemoteException {
         return roomList;
@@ -25,6 +30,7 @@ public class ServerChat  implements IServerChat {
             newRoom.setRoomName(roomName);
             roomList.put(roomName, newRoom);
             Naming.rebind("rmi://localhost:2020/" + roomName, UnicastRemoteObject.exportObject(newRoom, 0));
+            controller.showRooms();
         } catch (Exception e) {
             e.printStackTrace();
         }

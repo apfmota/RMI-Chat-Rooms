@@ -36,7 +36,7 @@ public class RoomChat implements IRoomChat {
     }
 
     @Override
-    public void closeRoom() {
-        //nao sei o que fazer aqui por enquanto
+    public void closeRoom() throws RemoteException {
+        sendMsg("Servidor", "Sala fechada pelo servidor");
     }
 }

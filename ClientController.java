@@ -1,6 +1,10 @@
+import com.formdev.flatlaf.FlatDarkLaf;
+
 import javax.swing.*;
+import javax.swing.border.EmptyBorder;
 import java.awt.*;
 import java.rmi.Naming;
+import java.rmi.Remote;
 import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
 
@@ -18,11 +22,21 @@ public class ClientController {
         return roomMessages;
     }
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws UnsupportedLookAndFeelException {
         ClientController clientController = new ClientController();
     }
 
-    public ClientController() {
+    private Remote exportedUser;
+
+    private Remote getExportedUser() throws RemoteException {
+        if (exportedUser == null) {
+            exportedUser = UnicastRemoteObject.exportObject(userChat, 0);
+        }
+        return exportedUser;
+    }
+
+    public ClientController() throws UnsupportedLookAndFeelException {
+        UIManager.setLookAndFeel(new FlatDarkLaf());
         this.mainFrame = new JFrame();
         this.mainFrame.setTitle("RMI Chat - Client GUI");
         this.mainFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -35,14 +49,17 @@ public class ClientController {
         serverConnectionPanel.setSize(new Dimension(200, 100));
 
         JPanel serverNamePanel = new JPanel();
+        serverNamePanel.setBorder(new EmptyBorder(10, 10, 10, 10));
         serverNamePanel.setLayout(new BoxLayout(serverNamePanel, BoxLayout.Y_AXIS));
         JTextField serverNameField = new JTextField(15);
+        serverNameField.setText("localhost");
         JLabel serverNameLabel = new JLabel("Server address");
         serverNamePanel.add(serverNameLabel);
         serverNamePanel.add(serverNameField);
-        serverConnectionPanel.add(serverNamePanel, BorderLayout.CENTER);
+        serverConnectionPanel.add(serverNamePanel, BorderLayout.EAST);
 
         JPanel userNamePanel = new JPanel();
+        userNamePanel.setBorder(new EmptyBorder(10, 10, 10, 10));
         userNamePanel.setLayout(new BoxLayout(userNamePanel, BoxLayout.Y_AXIS));
         JLabel userNameLabel = new JLabel("User name");
         userNamePanel.add(userNameLabel);
@@ -51,13 +68,14 @@ public class ClientController {
         serverConnectionPanel.add(userNamePanel, BorderLayout.WEST);
 
         JLabel connectionFailMessage = new JLabel("A conexão falhou");
-        serverConnectionPanel.add(connectionFailMessage, BorderLayout.SOUTH);
+        connectionFailMessage.setForeground(Color.ORANGE);
+        serverConnectionPanel.add(connectionFailMessage, BorderLayout.NORTH);
         connectionFailMessage.setVisible(false);
         JButton connectButton = new JButton("Connect");
         connectButton.addActionListener(e -> {
             connectToServer(serverNameField.getText(), userNameField.getText(), connectionFailMessage);
         });
-        serverConnectionPanel.add(connectButton, BorderLayout.EAST);
+        serverConnectionPanel.add(connectButton, BorderLayout.SOUTH);
         mainPanel.add(serverConnectionPanel, BorderLayout.CENTER);
         this.mainFrame.setVisible(true);
     }
@@ -87,8 +105,9 @@ public class ClientController {
 
         for (String roomName: serverChat.getRooms()) {
             JPanel roomPanel = new JPanel();
+            roomPanel.setBorder(new EmptyBorder(5, 5, 5, 5));
             roomPanel.setLayout(new BorderLayout());
-            roomsPanel.add(roomPanel);
+            selectRoomsPanel.add(roomPanel);
             JLabel roomNameLabel = new JLabel(roomName);
             roomPanel.add(roomNameLabel, BorderLayout.WEST);
             JButton joinButton = new JButton("Join");
@@ -108,7 +127,7 @@ public class ClientController {
         roomNamePanel.add(roomNameLabel);
         JTextField roomNameField = new JTextField(15);
         roomNamePanel.add(roomNameField);
-        newRoomPanel.add(roomNamePanel, BorderLayout.WEST);
+        newRoomPanel.add(roomNamePanel, BorderLayout.CENTER);
 
         JButton newRoomButton = new JButton("New Room");
 
@@ -116,7 +135,7 @@ public class ClientController {
             createRoom(roomNameField.getText());
         });
         this.roomsPanel.add(newRoomPanel, BorderLayout.SOUTH);
-        newRoomPanel.add(newRoomButton, BorderLayout.EAST);
+        newRoomPanel.add(newRoomButton, BorderLayout.SOUTH);
         mainPanel.add(roomsPanel, BorderLayout.CENTER);
         mainFrame.add(mainPanel, BorderLayout.CENTER);
         this.mainFrame.revalidate();
@@ -127,7 +146,10 @@ public class ClientController {
         this.mainFrame.getContentPane().removeAll();
         this.roomsPanel = new JPanel();
         this.roomsPanel.setLayout(new BorderLayout());
-        this.roomsPanel.add(new JLabel(roomChat.getRoomName()), BorderLayout.NORTH);
+        JLabel roomNameLabel = new JLabel(roomChat.getRoomName());
+        roomNameLabel.setFont(roomNameLabel.getFont().deriveFont(18f));
+        roomNameLabel.setBorder(new EmptyBorder(10, 20, 10, 20));
+        this.roomsPanel.add(roomNameLabel, BorderLayout.NORTH);
         this.roomMessages = new JPanel();
         this.roomMessages.setLayout(new BoxLayout(roomMessages, BoxLayout.Y_AXIS));
         this.roomsPanel.add(roomMessages, BorderLayout.CENTER);
@@ -169,7 +191,7 @@ public class ClientController {
         try {
             this.roomChat = (IRoomChat) Naming.lookup("rmi://" + this.serverAddress + ":2020/" + roomName);
             showRoom();
-            this.roomChat.joinRoom(userChat.getUserName(), (IUserChat) UnicastRemoteObject.exportObject(userChat, 0));
+            this.roomChat.joinRoom(userChat.getUserName(), (IUserChat) getExportedUser());
         } catch (Exception e) {
             e.printStackTrace();
             //tratar melhor depois
@@ -196,9 +218,39 @@ public class ClientController {
     }
 
     public void receiveMessage(String senderName, String message) {
-        String formattedMsg = senderName + ": " + message;
-        getRoomMessages().add(new JLabel(formattedMsg));
-        getRoomMessages() .revalidate();
-        getRoomMessages().repaint();
+        try {
+            JPanel messagePanel = new JPanel();
+            messagePanel.setBorder(new EmptyBorder(10, 20, 10, 20));
+            messagePanel.setMaximumSize(new Dimension(500, 60));
+            if (senderName.equals(userChat.getUserName())) {
+                messagePanel.setLayout(new BorderLayout());
+                messagePanel.add(new JPanel(), BorderLayout.WEST);
+                JLabel messageLabel = new JLabel(message);
+                messageLabel.setOpaque(true);
+                messageLabel.setBorder(new EmptyBorder(5, 5, 5, 5));
+                messageLabel.setBackground(Color.LIGHT_GRAY);
+                messageLabel.setForeground(Color.DARK_GRAY);
+                messagePanel.add(messageLabel, BorderLayout.EAST);
+            } else {
+                messagePanel.setLayout(new BorderLayout());
+                messagePanel.add(new JPanel(), BorderLayout.EAST);
+                JPanel messageContentPanel = new JPanel();
+                messageContentPanel.setLayout(new BoxLayout(messageContentPanel, BoxLayout.Y_AXIS));
+                messageContentPanel.add(new JLabel(senderName));
+                JLabel messageLabel = new JLabel(message);
+                messageLabel.setOpaque(true);
+                messageLabel.setBorder(new EmptyBorder(5, 5, 5, 5));
+                messageLabel.setBackground(Color.LIGHT_GRAY);
+                messageLabel.setForeground(Color.DARK_GRAY);
+                messageContentPanel.add(messageLabel);
+                messagePanel.add(messageContentPanel, BorderLayout.WEST);
+
+            }
+            this.roomMessages.add(messagePanel);
+            this.mainFrame.revalidate();
+            this.mainFrame.repaint();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 }
