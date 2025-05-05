@@ -219,36 +219,41 @@ public class ClientController {
 
     public void receiveMessage(String senderName, String message) {
         try {
-            JPanel messagePanel = new JPanel();
-            messagePanel.setBorder(new EmptyBorder(10, 20, 10, 20));
-            messagePanel.setMaximumSize(new Dimension(500, 60));
-            if (senderName.equals(userChat.getUserName())) {
-                messagePanel.setLayout(new BorderLayout());
-                messagePanel.add(new JPanel(), BorderLayout.WEST);
-                JLabel messageLabel = new JLabel(message);
-                messageLabel.setOpaque(true);
-                messageLabel.setBorder(new EmptyBorder(5, 5, 5, 5));
-                messageLabel.setBackground(Color.LIGHT_GRAY);
-                messageLabel.setForeground(Color.DARK_GRAY);
-                messagePanel.add(messageLabel, BorderLayout.EAST);
+            if (message.equals("Sala fechada pelo servidor")) {
+                this.roomChat = null;
+                showRoom();
             } else {
-                messagePanel.setLayout(new BorderLayout());
-                messagePanel.add(new JPanel(), BorderLayout.EAST);
-                JPanel messageContentPanel = new JPanel();
-                messageContentPanel.setLayout(new BoxLayout(messageContentPanel, BoxLayout.Y_AXIS));
-                messageContentPanel.add(new JLabel(senderName));
-                JLabel messageLabel = new JLabel(message);
-                messageLabel.setOpaque(true);
-                messageLabel.setBorder(new EmptyBorder(5, 5, 5, 5));
-                messageLabel.setBackground(Color.LIGHT_GRAY);
-                messageLabel.setForeground(Color.DARK_GRAY);
-                messageContentPanel.add(messageLabel);
-                messagePanel.add(messageContentPanel, BorderLayout.WEST);
+                JPanel messagePanel = new JPanel();
+                messagePanel.setBorder(new EmptyBorder(10, 20, 10, 20));
+                messagePanel.setMaximumSize(new Dimension(500, 60));
+                if (senderName.equals(userChat.getUserName())) {
+                    messagePanel.setLayout(new BorderLayout());
+                    messagePanel.add(new JPanel(), BorderLayout.WEST);
+                    JLabel messageLabel = new JLabel(message);
+                    messageLabel.setOpaque(true);
+                    messageLabel.setBorder(new EmptyBorder(5, 5, 5, 5));
+                    messageLabel.setBackground(Color.LIGHT_GRAY);
+                    messageLabel.setForeground(Color.DARK_GRAY);
+                    messagePanel.add(messageLabel, BorderLayout.EAST);
+                } else {
+                    messagePanel.setLayout(new BorderLayout());
+                    messagePanel.add(new JPanel(), BorderLayout.EAST);
+                    JPanel messageContentPanel = new JPanel();
+                    messageContentPanel.setLayout(new BoxLayout(messageContentPanel, BoxLayout.Y_AXIS));
+                    messageContentPanel.add(new JLabel(senderName));
+                    JLabel messageLabel = new JLabel(message);
+                    messageLabel.setOpaque(true);
+                    messageLabel.setBorder(new EmptyBorder(5, 5, 5, 5));
+                    messageLabel.setBackground(Color.LIGHT_GRAY);
+                    messageLabel.setForeground(Color.DARK_GRAY);
+                    messageContentPanel.add(messageLabel);
+                    messagePanel.add(messageContentPanel, BorderLayout.WEST);
 
+                }
+                this.roomMessages.add(messagePanel);
+                this.mainFrame.revalidate();
+                this.mainFrame.repaint();
             }
-            this.roomMessages.add(messagePanel);
-            this.mainFrame.revalidate();
-            this.mainFrame.repaint();
         } catch (Exception e) {
             e.printStackTrace();
         }
