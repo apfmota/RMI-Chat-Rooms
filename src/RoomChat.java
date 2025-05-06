@@ -21,7 +21,7 @@ public class RoomChat extends UnicastRemoteObject implements IRoomChat {
     }
 
     @Override
-    public synchronized void joinRoom(String userName, IUserChat user) throws RemoteException {
+    public void joinRoom(String userName, IUserChat user) throws RemoteException {
         if (!userList.containsKey(userName)) {
             userList.put(userName, user);
             System.out.println("Usuário '" + userName + "' entrou na sala '" + roomName + "'.");
@@ -32,7 +32,7 @@ public class RoomChat extends UnicastRemoteObject implements IRoomChat {
     }
 
     @Override
-    public synchronized void leaveRoom(String usrName) throws RemoteException {
+    public void leaveRoom(String usrName) throws RemoteException {
         if (userList.containsKey(usrName)) {
             System.out.println("Usuário '" + usrName + "' saiu da sala '" + roomName + "'.");
             sendMsg("[Servidor]", "'" + usrName + "' saiu da sala.");
@@ -43,7 +43,7 @@ public class RoomChat extends UnicastRemoteObject implements IRoomChat {
     }
 
     @Override
-    public synchronized void sendMsg(String usrName, String msg) throws RemoteException {
+    public void sendMsg(String usrName, String msg) throws RemoteException {
         for (Map.Entry<String, IUserChat> entry : userList.entrySet()) {
             String userName = entry.getKey();
             IUserChat user = entry.getValue();
@@ -59,7 +59,7 @@ public class RoomChat extends UnicastRemoteObject implements IRoomChat {
     }
 
     @Override
-    public synchronized void closeRoom() throws RemoteException {
+    public void closeRoom() throws RemoteException {
         String closeMessage = "Sala fechada pelo servidor.";
         for (IUserChat user : userList.values()) {
             try {
@@ -72,10 +72,5 @@ public class RoomChat extends UnicastRemoteObject implements IRoomChat {
         System.out.println("Sala '" + roomName + "' sendo fechada. Notificando usuários.");
         userList.clear();
         // A remoção da sala da lista do servidor será feita pelo ServerChat.
-    }
-
-    @Override
-    public Map<String, IUserChat> getUsers() throws RemoteException {
-        return userList;
     }
 }

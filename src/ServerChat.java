@@ -29,7 +29,7 @@ public class ServerChat extends UnicastRemoteObject implements IServerChat {
         System.out.println("Servidor de Chat iniciado.");
     }
 
-    private void initializeGUI() throws UnsupportedLookAndFeelException {
+    private void initializeGUI() throws UnsupportedLookAndFeelException, RemoteException {
         UIManager.setLookAndFeel(new FlatDarkLaf());
         frame = new JFrame("Servidor de Chat");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -66,7 +66,7 @@ public class ServerChat extends UnicastRemoteObject implements IServerChat {
         updateRoomList();
     }
 
-    private void updateRoomList() {
+    private void updateRoomList() throws RemoteException {
         roomListModel.clear();
         for (String roomName : roomList.keySet()) {
             roomListModel.addElement(roomName);
@@ -116,7 +116,7 @@ public class ServerChat extends UnicastRemoteObject implements IServerChat {
         }
     }
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws RemoteException {
         try {
             ServerChat server = new ServerChat();
             Registry registry = LocateRegistry.createRegistry(2020);

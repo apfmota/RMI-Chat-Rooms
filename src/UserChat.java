@@ -16,6 +16,7 @@ import java.util.ArrayList;
 public class UserChat extends UnicastRemoteObject implements IUserChat {
 
     private String userName;
+    private String serverAddress;
     private IServerChat server;
     private IRoomChat currentRoom;
     private JFrame frame;
@@ -32,12 +33,13 @@ public class UserChat extends UnicastRemoteObject implements IUserChat {
     public UserChat(String name, String serverAddress) throws RemoteException, UnsupportedLookAndFeelException {
         super();
         this.userName = name;
+        this.serverAddress = serverAddress;
         initializeGUI();
         connectToServer(serverAddress);
         loadRoomList();
     }
 
-    private void connectToServer(String serverAdddress) {
+    private void connectToServer(String serverAdddress) throws RemoteException {
         try {
             Registry registry = LocateRegistry.getRegistry(serverAdddress, 2020);
             server = (IServerChat) registry.lookup("Servidor");
@@ -48,7 +50,7 @@ public class UserChat extends UnicastRemoteObject implements IUserChat {
         }
     }
 
-    private void loadRoomList() {
+    private void loadRoomList() throws RemoteException {
         if (server != null) {
             try {
                 ArrayList<String> rooms = server.getRooms();
@@ -63,22 +65,17 @@ public class UserChat extends UnicastRemoteObject implements IUserChat {
         }
     }
 
-    public void joinRoom(String roomName) {
+    private void joinRoom(String roomName) throws RemoteException {
         if (server != null) {
             try {
-                Registry registry = LocateRegistry.getRegistry("localhost", 2020);
+                Registry registry = LocateRegistry.getRegistry(serverAddress, 2020);
                 IRoomChat room = (IRoomChat) registry.lookup(roomName);
-                if (room.getUsers().containsKey(userName)) {
-                    JOptionPane.showMessageDialog(frame, "Você já está nessa sala.", "Aviso",
-                        JOptionPane.WARNING_MESSAGE);
-                } else {
-                    if (currentRoom != null) {
+                if (currentRoom != null) {
                         currentRoom.leaveRoom(userName);
                     }
-                    room.joinRoom(userName, this);
-                    currentRoom = room;
-                    appendToChat("[Sistema]", "Entrou na sala '" + roomName + "'.");
-                }
+                room.joinRoom(userName, this);
+                currentRoom = room;
+                appendToChat("[Sistema]", "Entrou na sala '" + roomName + "'.");
             } catch (NotBoundException | RemoteException e) {
                 appendToChat("[Erro]", "Não foi possível entrar na sala '" + roomName + "': " + e.getMessage());
                 e.printStackTrace();
@@ -88,7 +85,7 @@ public class UserChat extends UnicastRemoteObject implements IUserChat {
         }
     }
 
-    private void createNewRoom(String roomName) {
+    private void createNewRoom(String roomName) throws RemoteException {
         if (server != null) {
             try {
                 server.createRoom(roomName);
@@ -104,7 +101,7 @@ public class UserChat extends UnicastRemoteObject implements IUserChat {
         }
     }
 
-    public void leaveCurrentRoom() {
+    public void leaveCurrentRoom() throws RemoteException {
         if (currentRoom != null) {
             try {
                 currentRoom.leaveRoom(userName);
@@ -119,7 +116,7 @@ public class UserChat extends UnicastRemoteObject implements IUserChat {
         }
     }
 
-    public void sendMessage(String msg) {
+    public void sendMessage(String msg) throws RemoteException {
         if (currentRoom != null) {
             try {
                 currentRoom.sendMsg(userName, msg);
@@ -140,19 +137,21 @@ public class UserChat extends UnicastRemoteObject implements IUserChat {
         final String message = msg;
         SwingUtilities.invokeLater(new Runnable() {
             public void run() {
-                appendToChat(sender, message);
-                if (sender.equals("[Servidor]") && message.equals("Sala fechada pelo servidor.")) {
-                    appendToChat("[Sistema]", "Esta sala foi fechada pelo servidor.");
-                    if (currentRoom != null) {
+                try {
+                    appendToChat(sender, message);
+                    if (sender.equals("[Servidor]") && message.equals("Sala fechada pelo servidor.")) {
+                        appendToChat("[Sistema]", "Esta sala foi fechada pelo servidor.");
                         currentRoom = null;
+                        loadRoomList();
                     }
-                    loadRoomList();
+                } catch (RemoteException e) {
+                    e.printStackTrace();
                 }
             }
         });
     }
 
-    private void appendToChat(String sender, String message) {
+    private void appendToChat(String sender, String message) throws RemoteException {
         System.out.println("Vai adicionar à chatArea: " + sender + ": " + message);
         chatArea.append(sender + ": " + message + "\n");
         chatArea.setCaretPosition(chatArea.getDocument().getLength());
@@ -166,7 +165,7 @@ public class UserChat extends UnicastRemoteObject implements IUserChat {
 
     private JScrollPane chatScrollPane;
 
-    private void initializeGUI() {
+    private void initializeGUI() throws RemoteException {
         frame = new JFrame("Chat - " + userName);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setSize(600, 400);
@@ -186,7 +185,11 @@ public class UserChat extends UnicastRemoteObject implements IUserChat {
         sendButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
+                try {
                 sendMessage(messageField.getText());
+                } catch (RemoteException ex) {
+                    ex.printStackTrace();
+                }
             }
         });
         inputPanel.add(sendButton, BorderLayout.EAST);
@@ -214,7 +217,11 @@ public class UserChat extends UnicastRemoteObject implements IUserChat {
             public void actionPerformed(ActionEvent e) {
                 String selectedRoom = roomListDisplay.getSelectedValue();
                 if (selectedRoom != null) {
-                    joinRoom(selectedRoom);
+                    try {
+                        joinRoom(selectedRoom);
+                    } catch (RemoteException ex) {
+                        ex.printStackTrace();
+                    }
                 } else {
                     JOptionPane.showMessageDialog(frame, "Selecione uma sala para entrar.", "Aviso",
                             JOptionPane.WARNING_MESSAGE);
@@ -227,7 +234,11 @@ public class UserChat extends UnicastRemoteObject implements IUserChat {
         leaveButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                leaveCurrentRoom();
+                try {                
+                    leaveCurrentRoom();
+                } catch (RemoteException ex) {
+                    ex.printStackTrace();
+                }
             }
         });
         joinLeaveButtons.add(leaveButton, BorderLayout.EAST);
@@ -252,8 +263,12 @@ public class UserChat extends UnicastRemoteObject implements IUserChat {
                             newRoomNameField.setText("");
                         }
                     } catch (RemoteException ex) {
+                        try {
                         appendToChat("[Erro]", "Erro ao verificar a sala: " + ex.getMessage());
                         ex.printStackTrace();
+                        } catch (RemoteException e1) {
+                            e1.printStackTrace();
+                        }
                     }
                 } else {
                     JOptionPane.showMessageDialog(frame, "Digite o nome da nova sala.", "Aviso",
@@ -278,7 +293,7 @@ public class UserChat extends UnicastRemoteObject implements IUserChat {
         loadRoomList();
     }
 
-    public static void main(String[] args) throws UnsupportedLookAndFeelException {
+    public static void main(String[] args) throws UnsupportedLookAndFeelException, RemoteException {
         UIManager.setLookAndFeel(new FlatDarkLaf());
         String userName = JOptionPane.showInputDialog(null, "Digite seu nome:", "Nome de Usuário", JOptionPane.PLAIN_MESSAGE);
         String serverAdress = JOptionPane.showInputDialog(null, "Digite o endereço do servidor:", "Endereço", JOptionPane.PLAIN_MESSAGE, null, null, "localhost").toString();

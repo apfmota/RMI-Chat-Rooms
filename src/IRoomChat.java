@@ -8,5 +8,4 @@ public interface IRoomChat extends Remote {
     void leaveRoom(String usrName) throws RemoteException;
     String getRoomName() throws RemoteException;
     void closeRoom() throws RemoteException;
-    Map<String, IUserChat> getUsers() throws RemoteException;
 }
