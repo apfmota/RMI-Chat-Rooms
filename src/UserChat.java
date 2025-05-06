@@ -68,12 +68,17 @@ public class UserChat extends UnicastRemoteObject implements IUserChat {
             try {
                 Registry registry = LocateRegistry.getRegistry("localhost", 2020);
                 IRoomChat room = (IRoomChat) registry.lookup(roomName);
-                if (currentRoom != null) {
-                    currentRoom.leaveRoom(userName);
+                if (room.getUsers().containsKey(userName)) {
+                    JOptionPane.showMessageDialog(frame, "Você já está nessa sala.", "Aviso",
+                        JOptionPane.WARNING_MESSAGE);
+                } else {
+                    if (currentRoom != null) {
+                        currentRoom.leaveRoom(userName);
+                    }
+                    room.joinRoom(userName, this);
+                    currentRoom = room;
+                    appendToChat("[Sistema]", "Entrou na sala '" + roomName + "'.");
                 }
-                room.joinRoom(userName, this);
-                currentRoom = room;
-                appendToChat("[Sistema]", "Entrou na sala '" + roomName + "'.");
             } catch (NotBoundException | RemoteException e) {
                 appendToChat("[Erro]", "Não foi possível entrar na sala '" + roomName + "': " + e.getMessage());
                 e.printStackTrace();
@@ -138,12 +143,8 @@ public class UserChat extends UnicastRemoteObject implements IUserChat {
                 appendToChat(sender, message);
                 if (sender.equals("[Servidor]") && message.equals("Sala fechada pelo servidor.")) {
                     appendToChat("[Sistema]", "Esta sala foi fechada pelo servidor.");
-                    try {
-                        if (currentRoom != null && currentRoom.getRoomName().equals(message)) {
-                            currentRoom = null;
-                        }
-                    } catch (RemoteException e) {
-                        e.printStackTrace();
+                    if (currentRoom != null) {
+                        currentRoom = null;
                     }
                     loadRoomList();
                 }
@@ -242,8 +243,18 @@ public class UserChat extends UnicastRemoteObject implements IUserChat {
             public void actionPerformed(ActionEvent e) {
                 String newRoomName = newRoomNameField.getText().trim();
                 if (!newRoomName.isEmpty()) {
-                    createNewRoom(newRoomName);
-                    newRoomNameField.setText("");
+                    try {
+                        if (server.getRooms().contains(newRoomName)) {
+                            JOptionPane.showMessageDialog(frame, "Essa sala já existe.", "Aviso",
+                                JOptionPane.WARNING_MESSAGE);
+                        } else {
+                            createNewRoom(newRoomName);
+                            newRoomNameField.setText("");
+                        }
+                    } catch (RemoteException ex) {
+                        appendToChat("[Erro]", "Erro ao verificar a sala: " + ex.getMessage());
+                        ex.printStackTrace();
+                    }
                 } else {
                     JOptionPane.showMessageDialog(frame, "Digite o nome da nova sala.", "Aviso",
                             JOptionPane.WARNING_MESSAGE);
