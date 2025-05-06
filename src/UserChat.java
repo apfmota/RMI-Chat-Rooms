@@ -139,7 +139,7 @@ public class UserChat extends UnicastRemoteObject implements IUserChat {
             public void run() {
                 try {
                     appendToChat(sender, message);
-                    if (sender.equals("[Servidor]") && message.equals("Sala fechada pelo servidor.")) {
+                    if (message.trim().toLowerCase().equals("Sala fechada pelo servidor.")) {
                         appendToChat("[Sistema]", "Esta sala foi fechada pelo servidor.");
                         currentRoom = null;
                         loadRoomList();
@@ -210,6 +210,19 @@ public class UserChat extends UnicastRemoteObject implements IUserChat {
         joinLeaveButtons.setBorder(new EmptyBorder(5, 5, 5, 5));
         joinLeaveButtons.setMaximumSize(new Dimension(200, 40));
         roomPanel.add(joinLeaveButtons);
+
+        JButton refreshButton = new JButton("Att");
+        joinLeaveButtons.add(refreshButton, BorderLayout.CENTER);
+        refreshButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                try {
+                    loadRoomList();
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                }
+            }
+        });
 
         joinButton = new JButton("Entrar");
         joinButton.addActionListener(new ActionListener() {
